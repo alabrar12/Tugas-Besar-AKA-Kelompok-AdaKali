@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Preorder Traversal - Sistem Perpustakaan</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .control-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+            min-width: 150px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .tree-canvas {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: #f8f9fa;
+            margin-top: 15px;
+        }
+
+        .output {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            font-family: 'Courier New', monospace;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .output-label {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        canvas {
+            max-height: 400px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #2196f3;
+            margin-top: 15px;
+        }
+
+        .info-box h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Sistem Perpustakaan: Analisis Preorder Traversal</h1>
+            <p class="subtitle">Perbandingan Algoritma Rekursif vs Iteratif</p>
+        </div>
+
+        <div class="control-panel">
+            <h2 style="color: #667eea; margin-bottom: 15px;">🎛️ Panel Kontrol</h2>
+            <div class="input-group">
+                <label>Jumlah Node (n):</label>
+                <input type="range" id="nodeSlider" min="1" max="31" value="7" oninput="updateNodeCount(this.value)">
+                <input type="number" id="nodeInput" min="1" max="31" value="7" onchange="updateNodeCount(this.value)">
+            </div>
+            <button onclick="runSimulation()">🚀 Jalankan Simulasi</button>
+            <button onclick="runBenchmark()">📊 Benchmark (n=1 s/d 1000)</button>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>🌳 Visualisasi Pohon Biner</h2>
+                <canvas id="treeCanvas" class="tree-canvas" width="600" height="400"></canvas>
+            </div>
+
+            <div class="card">
+                <h2>📈 Grafik Running Time</h2>
+                <canvas id="timeChart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>🔄 Hasil Rekursif</h2>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="recursiveTime">-</div>
+                        <div class="stat-label">Waktu (ms)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="recursiveOps">-</div>
+                        <div class="stat-label">Operasi</div>
+                    </div>
+                </div>
+                <div class="output-label">Output:</div>
+                <div class="output" id="recursiveOutput">Belum dijalankan...</div>
+            </div>
+
+            <div class="card">
+                <h2>🔁 Hasil Iteratif</h2>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="iterativeTime">-</div>
+                        <div class="stat-label">Waktu (ms)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="iterativeOps">-</div>
+                        <div class="stat-label">Operasi</div>
+                    </div>
+                </div>
+                <div class="output-label">Output:</div>
+                <div class="output" id="iterativeOutput">Belum dijalankan...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>ℹ️ Informasi Kompleksitas</h2>
+            <div class="info-box">
+                <h3>Preorder Rekursif:</h3>
+                <ul>
+                    <li><strong>Time Complexity:</strong> O(n) - Setiap node dikunjungi sekali</li>
+                </ul>
+            </div>
+            <div class="info-box">
+                <h3>Preorder Iteratif:</h3>
+                <ul>
+                    <li><strong>Time Complexity:</strong> O(n) - Setiap node dikunjungi sekali</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Node {
+            constructor(id, label) {
+                this.id = id;
+                this.label = label;
+                this.left = null;
+                this.right = null;
+            }
+        }
+
+        let timeChart = null;
+
+        function buildTree(n) {
+            if (n === 0) return null;
+
+            const root = new Node(1, "LOBI UTAMA");
+            if (n === 1) return root;
+
+            const queue = [root];
+            let id = 2;
+
+            while (queue.length > 0 && id <= n) {
+                const current = queue.shift();
+
+                if (id <= n) {
+                    let label;
+                    if (id === 2) label = "RAK FIKSI";
+                    else if (id === 3) label = "RAK NON-FIKSI";
+                    else label = `Buku-${id}`;
+
+                    current.left = new Node(id, label);
+                    queue.push(current.left);
+                    id++;
+                }
+
+                if (id <= n) {
+                    let label;
+                    if (id === 2) label = "RAK FIKSI";
+                    else if (id === 3) label = "RAK NON-FIKSI";
+                    else label = `Buku-${id}`;
+
+                    current.right = new Node(id, label);
+                    queue.push(current.right);
+                    id++;
+                }
+            }
+
+            return root;
+        }
+
+        function preorderRecursive(root, result = []) {
+            if (!root) return result;
+            result.push(root.label);
+            preorderRecursive(root.left, result);
+            preorderRecursive(root.right, result);
+            return result;
+        }
+
+        function preorderIterative(root) {
+            if (!root) return [];
+            
+            const result = [];
+            const stack = [root];
+
+            while (stack.length > 0) {
+                const current = stack.pop();
+                result.push(current.label);
+
+                if (current.right) stack.push(current.right);
+                if (current.left) stack.push(current.left);
+            }
+
+            return result;
+        }
+
+        function drawTree(root) {
+            const canvas = document.getElementById('treeCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!root) return;
+
+            const nodeRadius = 25;
+            const levelHeight = 80;
+
+            function drawNode(node, x, y, horizontalGap) {
+                if (!node) return;
+
+                ctx.fillStyle = '#667eea';
+                ctx.beginPath();
+                ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const text = node.label.length > 12 ? node.label.substring(0, 10) + '...' : node.label;
+                ctx.fillText(text, x, y);
+
+                if (node.left) {
+                    const leftX = x - horizontalGap;
+                    const leftY = y + levelHeight;
+                    ctx.strokeStyle = '#764ba2';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + nodeRadius);
+                    ctx.lineTo(leftX, leftY - nodeRadius);
+                    ctx.stroke();
+                    drawNode(node.left, leftX, leftY, horizontalGap / 2);
+                }
+
+                if (node.right) {
+                    const rightX = x + horizontalGap;
+                    const rightY = y + levelHeight;
+                    ctx.strokeStyle = '#764ba2';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + nodeRadius);
+                    ctx.lineTo(rightX, rightY - nodeRadius);
+                    ctx.stroke();
+                    drawNode(node.right, rightX, rightY, horizontalGap / 2);
+                }
+            }
+
+            drawNode(root, canvas.width / 2, 40, 120);
+        }
+
+        function updateNodeCount(value) {
+            document.getElementById('nodeSlider').value = value;
+            document.getElementById('nodeInput').value = value;
+        }
+
+        function runSimulation() {
+            const n = parseInt(document.getElementById('nodeInput').value);
+            const root = buildTree(n);
+
+            drawTree(root);
+
+            let recursiveOps = 0;
+            const startRecursive = performance.now();
+            const recursiveResult = preorderRecursive(root);
+            const endRecursive = performance.now();
+            const recursiveTime = (endRecursive - startRecursive).toFixed(4);
+            recursiveOps = recursiveResult.length;
+
+            let iterativeOps = 0;
+            const startIterative = performance.now();
+            const iterativeResult = preorderIterative(root);
+            const endIterative = performance.now();
+            const iterativeTime = (endIterative - startIterative).toFixed(4);
+            iterativeOps = iterativeResult.length;
+
+            document.getElementById('recursiveTime').textContent = recursiveTime;
+            document.getElementById('recursiveOps').textContent = recursiveOps;
+            document.getElementById('recursiveOutput').textContent = 
+                recursiveResult.map(label => `[${label}]`).join(' ');
+
+            document.getElementById('iterativeTime').textContent = iterativeTime;
+            document.getElementById('iterativeOps').textContent = iterativeOps;
+            document.getElementById('iterativeOutput').textContent = 
+                iterativeResult.map(label => `[${label}]`).join(' ');
+        }
+
+        function runBenchmark() {
+            const sizes = [];
+            const recursiveTimes = [];
+            const iterativeTimes = [];
+
+            for (let n = 1; n <= 1000; n += 50) {
+                const root = buildTree(n);
+
+                const startRec = performance.now();
+                for (let i = 0; i < 100; i++) {
+                    preorderRecursive(root);
+                }
+                const endRec = performance.now();
+                const avgRec = (endRec - startRec) / 100;
+
+                const startIter = performance.now();
+                for (let i = 0; i < 100; i++) {
+                    preorderIterative(root);
+                }
+                const endIter = performance.now();
+                const avgIter = (endIter - startIter) / 100;
+
+                sizes.push(n);
+                recursiveTimes.push(avgRec);
+                iterativeTimes.push(avgIter);
+            }
+
+            if (timeChart) {
+                timeChart.destroy();
+            }
+
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            timeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sizes,
+                    datasets: [{
+                        label: 'Rekursif',
+                        data: recursiveTimes,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Iteratif',
+                        data: iterativeTimes,
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Running Time: Rekursif vs Iteratif',
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Jumlah Node (n)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Waktu (ms)'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        window.onload = function() {
+            runSimulation();
+        };
+    </script>
+</body>
+</html>
